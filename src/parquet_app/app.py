@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -17,6 +17,8 @@ from .conversion import (
 from .utils import ensure_parent
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+
+
 # ---------------------------
 # Converter worker
 # ---------------------------
@@ -52,7 +54,7 @@ class ConverterTab(QtWidgets.QWidget):
         self.worker: Optional[ConverterWorker] = None
         self._build_ui()
 
-    def _build_ui(self):
+    def _build_ui(self) -> None:
         layout = QtWidgets.QVBoxLayout(self)
 
         path_group = QtWidgets.QGroupBox("Paths")
@@ -145,25 +147,39 @@ class ConverterTab(QtWidgets.QWidget):
     # -----------------------
     # UI Handlers
     # -----------------------
-    def _browse_csv(self):
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select CSV", str(ROOT_DIR), "CSV files (*.csv);;All files (*)")
+    def _browse_csv(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Select CSV",
+            str(ROOT_DIR),
+            "CSV files (*.csv);;All files (*)",
+        )
         if path:
             self.csv_edit.setText(path)
             base, _ = os.path.splitext(path)
             self.parquet_edit.setText(base + ".parquet")
 
-    def _browse_parquet(self):
-        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Select Parquet Output", str(ROOT_DIR), "Parquet files (*.parquet)")
+    def _browse_parquet(self) -> None:
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Select Parquet Output",
+            str(ROOT_DIR),
+            "Parquet files (*.parquet)",
+        )
         if path:
             if not path.lower().endswith(".parquet"):
                 path += ".parquet"
             self.parquet_edit.setText(path)
 
-    def _run_conversion(self):
+    def _run_conversion(self) -> None:
         csv_path = self.csv_edit.text().strip()
         pq_path = self.parquet_edit.text().strip()
         if not csv_path or not pq_path:
-            QtWidgets.QMessageBox.warning(self, "Error", "CSV input and Parquet output paths are required.")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Error",
+                "CSV input and Parquet output paths are required.",
+            )
             return
 
         opts = CSVToParquetOptions(
@@ -189,10 +205,10 @@ class ConverterTab(QtWidgets.QWidget):
         self.run_btn.setEnabled(False)
         self.worker.start()
 
-    def _append_log(self, line: str):
+    def _append_log(self, line: str) -> None:
         self.log_text.appendPlainText(line)
 
-    def _on_finished(self, stats: ConversionStats):
+    def _on_finished(self, stats: ConversionStats) -> None:
         self.run_btn.setEnabled(True)
 
         summary = summarize_stats(stats)
@@ -201,7 +217,7 @@ class ConverterTab(QtWidgets.QWidget):
         self._append_log("Done.")
         self.progress.setValue(100)
 
-    def _on_failed(self, msg: str):
+    def _on_failed(self, msg: str) -> None:
         self.run_btn.setEnabled(True)
         self._append_log(f"Error: {msg}")
         QtWidgets.QMessageBox.critical(self, "Conversion failed", msg)
@@ -215,36 +231,46 @@ class PandasModel(QtCore.QAbstractTableModel):
         super().__init__(parent)
         self._df = df
 
-    def rowCount(self, parent=QtCore.QModelIndex()):
+    def rowCount(self, parent=QtCore.QModelIndex()) -> int:  # type: ignore[override]
         return self._df.shape[0]
 
-    def columnCount(self, parent=QtCore.QModelIndex()):
+    def columnCount(self, parent=QtCore.QModelIndex()) -> int:  # type: ignore[override]
         return self._df.shape[1]
 
-    def data(self, index, role=QtCore.Qt.DisplayRole):
+    def data(self, index, role=QtCore.Qt.DisplayRole):  # type: ignore[override]
         if index.isValid() and role in (QtCore.Qt.DisplayRole, QtCore.Qt.EditRole):
             value = self._df.iat[index.row(), index.column()]
             return "" if pd.isna(value) else str(value)
         return None
 
-    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):  # type: ignore[override]
         if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
             return str(self._df.columns[section])
         return super().headerData(section, orientation, role)
 
-    def flags(self, index):
+    def flags(self, index):  # type: ignore[override]
         if not index.isValid():
             return QtCore.Qt.NoItemFlags
-        return QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsEditable
+        return (
+            QtCore.Qt.ItemIsSelectable
+            | QtCore.Qt.ItemIsEnabled
+            | QtCore.Qt.ItemIsEditable
+        )
 
-    def setData(self, index, value, role=QtCore.Qt.EditRole):
+    def setData(self, index, value, role=QtCore.Qt.EditRole):  # type: ignore[override]
         if index.isValid() and role == QtCore.Qt.EditRole:
-            self._df.iat[index.row(), index.column()] = value if value != "" else pd.NA
-            self.dataChanged.emit(index, index, [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole])
+            self._df.iat[index.row(), index.column()] = (
+                value if value != "" else pd.NA
+            )
+            self.dataChanged.emit(
+                index,
+                index,
+                [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole],
+            )
             return True
         return False
 
-    def update_data(self, df: pd.DataFrame):
+    def update_data(self, df: pd.DataFrame) -> None:
         self.beginResetModel()
         self._df = df
         self.endResetModel()
@@ -259,7 +285,7 @@ class ViewerTab(QtWidgets.QWidget):
         self.last_dir = str(ROOT_DIR)
         self._build_ui()
 
-    def _build_ui(self):
+    def _build_ui(self) -> None:
         layout = QtWidgets.QVBoxLayout(self)
 
         button_row = QtWidgets.QHBoxLayout()
@@ -301,18 +327,20 @@ class ViewerTab(QtWidgets.QWidget):
     # Handlers
     # -----------------------
     @QtCore.Slot()
-    def show_header_menu(self, pos):
+    def show_header_menu(self, pos) -> None:
         header = self.table_view.horizontalHeader()
         menu = QtWidgets.QMenu(self)
         for i, col in enumerate(self.filtered_df.columns):
             action = QtGui.QAction(col, self, checkable=True)
             action.setChecked(not self.table_view.isColumnHidden(i))
-            action.toggled.connect(lambda checked, i=i: self.table_view.setColumnHidden(i, not checked))
+            action.toggled.connect(
+                lambda checked, i=i: self.table_view.setColumnHidden(i, not checked)
+            )
             menu.addAction(action)
         menu.exec(header.mapToGlobal(pos))
 
     @QtCore.Slot()
-    def show_row_menu(self, pos):
+    def show_row_menu(self, pos) -> None:
         idx = self.table_view.indexAt(pos)
         if not idx.isValid():
             return
@@ -322,15 +350,18 @@ class ViewerTab(QtWidgets.QWidget):
         menu.addAction(delete)
         menu.exec(self.table_view.mapToGlobal(pos))
 
-    def delete_row(self, row):
+    def delete_row(self, row: int) -> None:
         index_label = self.filtered_df.index[row]
         self.df = self.df.drop(index_label)
         self.filter_table(self.search_bar.text())
 
     @QtCore.Slot()
-    def load_parquet(self):
+    def load_parquet(self) -> None:
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self, "Open Parquet File", self.last_dir, "Parquet Files (*.parquet);;All Files (*)"
+            self,
+            "Open Parquet File",
+            self.last_dir,
+            "Parquet Files (*.parquet);;All Files (*)",
         )
         if file_path:
             try:
@@ -339,29 +370,51 @@ class ViewerTab(QtWidgets.QWidget):
                 self.model.update_data(self.filtered_df)
                 self.last_dir = os.path.dirname(file_path)
             except Exception as e:
-                QtWidgets.QMessageBox.critical(self, "Error", f"Failed to load file:\n{e}")
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to load file:\n{e}",
+                )
 
     @QtCore.Slot()
-    def export_to_csv(self):
+    def export_to_csv(self) -> None:
         if self.filtered_df.empty:
-            QtWidgets.QMessageBox.warning(self, "No Data", "There is no data to export.")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "No Data",
+                "There is no data to export.",
+            )
             return
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Save CSV", self.last_dir, "CSV Files (*.csv);;All Files (*)"
+            self,
+            "Save CSV",
+            self.last_dir,
+            "CSV Files (*.csv);;All Files (*)",
         )
         if file_path:
             try:
                 self.filtered_df.to_csv(file_path, index=False)
             except Exception as e:
-                QtWidgets.QMessageBox.critical(self, "Error", f"Failed to export file:\n{e}")
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to export file:\n{e}",
+                )
 
     @QtCore.Slot()
-    def export_to_excel(self):
+    def export_to_excel(self) -> None:
         if self.filtered_df.empty:
-            QtWidgets.QMessageBox.warning(self, "No Data", "There is no data to export.")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "No Data",
+                "There is no data to export.",
+            )
             return
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Save Excel", self.last_dir, "Excel Files (*.xlsx);;All Files (*)"
+            self,
+            "Save Excel",
+            self.last_dir,
+            "Excel Files (*.xlsx);;All Files (*)",
         )
         if file_path:
             try:
@@ -371,33 +424,54 @@ class ViewerTab(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.critical(
                     self,
                     "Missing Dependency",
-                    f"Cannot export to Excel because the '{missing}' library is not installed.\n"
+                    f"Cannot export to Excel because the '{missing}' "
+                    f"library is not installed.\n"
                     f"Please install it with:\n\n    pip install {missing}",
                 )
             except Exception as e:
-                QtWidgets.QMessageBox.critical(self, "Error", f"Failed to export file:\n{e}")
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to export file:\n{e}",
+                )
 
     @QtCore.Slot()
-    def save_parquet(self):
+    def save_parquet(self) -> None:
         if self.filtered_df.empty:
-            QtWidgets.QMessageBox.warning(self, "No Data", "There is no data to save.")
+            QtWidgets.QMessageBox.warning(
+                self,
+                "No Data",
+                "There is no data to save.",
+            )
             return
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self, "Save Parquet", self.last_dir, "Parquet Files (*.parquet);;All Files (*)"
+            self,
+            "Save Parquet",
+            self.last_dir,
+            "Parquet Files (*.parquet);;All Files (*)",
         )
         if file_path:
             try:
                 self.filtered_df.to_parquet(file_path, index=False, engine="pyarrow")
             except Exception as e:
-                QtWidgets.QMessageBox.critical(self, "Error", f"Failed to save file:\n{e}")
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Failed to save file:\n{e}",
+                )
 
     @QtCore.Slot(str)
-    def filter_table(self, text):
+    def filter_table(self, text: str) -> None:
         if self.df.empty:
             return
         if text:
             self.filtered_df = self.df[
-                self.df.apply(lambda row: row.astype(str).str.contains(text, case=False).any(), axis=1)
+                self.df.apply(
+                    lambda row: row.astype(str)
+                    .str.contains(text, case=False)
+                    .any(),
+                    axis=1,
+                )
             ]
         else:
             self.filtered_df = self.df.copy()
@@ -411,7 +485,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Parquet App")
+
         icon_path = ROOT_DIR / "static" / "parser.ico"
+        print("Icon path:", icon_path, "exists:", icon_path.exists())
         if icon_path.exists():
             self.setWindowIcon(QtGui.QIcon(str(icon_path)))
 
@@ -426,6 +502,11 @@ class MainWindow(QtWidgets.QMainWindow):
 # ---------------------------
 def run() -> int:
     app = QtWidgets.QApplication(sys.argv)
+
+    icon_path = ROOT_DIR / "static" / "parser.ico"
+    if icon_path.exists():
+        app.setWindowIcon(QtGui.QIcon(str(icon_path)))
+
     win = MainWindow()
     win.resize(1200, 800)
     win.show()

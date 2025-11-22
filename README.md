@@ -30,7 +30,7 @@
   </a>
 </p>
 
-A unified desktop + CLI toolkit for viewing, converting, and inspecting Parquet data. 
+A unified desktop + CLI toolkit for viewing, converting, and inspecting Parquet data.
 
 The app combines two major workflows:
 
@@ -42,6 +42,7 @@ The app combines two major workflows:
 ## Features
 
 ### Converter
+
 - Chunked CSV to Parquet conversion using pyarrow.ParquetWriter
 - Compression selection (snappy, zstd, gzip, brotli, lz4, none)
 - Parity checks: row count equality and column order equality with human readable summaries
@@ -52,6 +53,7 @@ The app combines two major workflows:
   - Parquet to JSON Lines
 
 ### Viewer
+
 - Load Parquet files via file dialog
 - Live search and filter rows
 - Inline cell editing
@@ -59,6 +61,7 @@ The app combines two major workflows:
 - Export filtered data to CSV, Excel (.xlsx), or back to Parquet
 
 ### Inspect
+
 - CLI metadata explorer with schema, columns, row groups, and size
 - Optional preview rows with offset, limit, and column selection
 
@@ -77,7 +80,7 @@ pip install -r requirements.txt
 
 ## Project Structure
 
-```
+```bash
 ├── src/parquet_app/
 │   ├── __init__.py
 │   ├── app.py           # Qt desktop UI (converter + viewer tabs)
@@ -98,22 +101,22 @@ pip install -r requirements.txt
 ### CLI
 
 ```bash
-python -m parquet_app.cli convert input.csv --compression zstd
-python -m parquet_app.cli convert input.parquet --jsonl --output output.jsonl
-python -m parquet_app.cli inspect example.parquet --preview --limit 5
+python -m src.parquet_app.cli convert input.csv --compression zstd
+python -m src.parquet_app.cli convert input.parquet --jsonl --output output.jsonl
+python -m src.parquet_app.cli inspect example.parquet --preview --limit 5
 ```
 
 Key options:
 
-* --chunksize: CSV reader chunk size (default 200000)
-* --compression: Parquet compression codec
-* --columns: Comma separated column subset for Parquet to text conversions or previews
-* --jsonl: Emit JSON Lines instead of CSV for Parquet to text
+- --chunksize: CSV reader chunk size (default 200000)
+- --compression: Parquet compression codec
+- --columns: Comma separated column subset for Parquet to text conversions or previews
+- --jsonl: Emit JSON Lines instead of CSV for Parquet to text
 
 ### Desktop App
 
 ```bash
-python -m parquet_app.cli gui
+python -m src.parquet_app.cli gui
 ```
 
 1. Open the Converter tab to select CSV input and Parquet output paths.
@@ -125,5 +128,5 @@ python -m parquet_app.cli gui
 
 ## Documentation
 
-* See [overview](./docs/overview.md) for architecture, data flow diagrams, and supported workflows.
-* See [usage](./docs/usage.md) for end to end CLI and GUI walkthroughs.
+- See [overview](./docs/overview.md) for architecture, data flow diagrams, and supported workflows.
+- See [usage](./docs/usage.md) for end to end CLI and GUI walkthroughs.

@@ -47,13 +47,14 @@ python -m parquet_app.cli gui
 ```
 
 ### Converter tab
+
 - Choose a CSV input and Parquet output path.
 - Configure delimiter, encoding, chunk size, compression, Arrow version, and nullable integer handling.
 - Press **Convert** to stream the CSV into Parquet. Logs and parity summaries (row and column checks) appear below the controls.
 
 ### Viewer tab
+
 - Open a Parquet file using the dialog.
 - Search/filter rows inline; click column headers to sort.
 - Right-click rows to delete; edits are applied directly to the in-memory DataFrame.
 - Export the filtered view to CSV, Excel (`.xlsx`), or Parquet.
-
