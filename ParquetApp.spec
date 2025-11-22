@@ -1,9 +1,7 @@
-# ParquetApp.spec
-
 block_cipher = None
 
 a = Analysis(
-    ['src/parquet_app/app.py'],
+    ['src/app.py'],
     pathex=['src'],
     binaries=[],
     datas=[

@@ -23,19 +23,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
-          pip install Pillow
-
-      - name: Remove old spec file if present
-        run: |
-          if (Test-Path ParquetApp.spec) { Remove-Item ParquetApp.spec }
 
       - name: Build Windows executable from spec
-        run: |
-          pyinstaller `
-            --noconfirm `
-            --clean `
-            ParquetApp.spec
-
+        run: pyinstaller --noconfirm --clean ParquetApp.spec
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
