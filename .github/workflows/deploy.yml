@@ -33,8 +33,7 @@ jobs:
             --windowed `
             --name ParquetApp `
             --paths src `
-            --icon static\parser.ico `
-            --add-data "static;static" `
+            --icon src\parser.ico `
             --collect-submodules PySide6 `
             --collect-submodules pyarrow `
             src\parquet_app\app.py
