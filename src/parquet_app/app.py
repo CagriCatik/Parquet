@@ -1,18 +1,12 @@
 from __future__ import annotations
 
-import math
 import os
 import sys
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import List, Optional
 
-import numpy as np
 import pandas as pd
-import pyarrow as pa
 from PySide6 import QtCore, QtGui, QtWidgets
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
 
 from .conversion import (
     CSVToParquetOptions,
@@ -23,111 +17,6 @@ from .conversion import (
 from .utils import ensure_parent
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-PLOTS_DIR = ROOT_DIR / "plots"
-PLOTS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-# ---------------------------
-# Matplotlib canvases
-# ---------------------------
-class SizeCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width: float = 5, height: float = 3):
-        self.fig = Figure(figsize=(width, height), tight_layout=True)
-        super().__init__(self.fig)
-        self.ax = self.fig.add_subplot(111)
-
-    def plot_sizes(self, csv_mb: float, pq_mb: float):
-        self.ax.clear()
-        labels = ["CSV", "Parquet"]
-        sizes = [csv_mb, pq_mb]
-        self.ax.bar(labels, sizes)
-        self.ax.set_ylabel("Size (MB)")
-        self.ax.set_title("File Size Comparison")
-        for i, v in enumerate(sizes):
-            if not math.isnan(v):
-                self.ax.text(i, v, f"{v:.2f} MB", ha="center", va="bottom")
-        self.draw()
-
-
-class Grid4x4Canvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width: float = 7, height: float = 6):
-        self.fig = Figure(figsize=(width, height), tight_layout=True)
-        super().__init__(self.fig)
-        self.axes = self.fig.subplots(4, 4)
-        self.fig.suptitle("CSV vs Parquet Comparison (4x4 Grid)", fontsize=12)
-
-    def plot_4x4(self, df_csv: pd.DataFrame, df_parquet: pd.DataFrame, time_unit: str = "s"):
-        self.fig.subplots_adjust(top=0.92)
-        for row in self.axes:
-            for ax in row:
-                ax.clear()
-
-        dfc = parse_time_and_cast_numeric(df_csv, time_unit=time_unit)
-        dfp = parse_time_and_cast_numeric(df_parquet, time_unit=time_unit)
-
-        pairs = [
-            ("Voltage", "Voltage (V)"),
-            ("Current", "Current (A)"),
-            ("Temperature", "Temperature (C)"),
-            ("SOC", "State of Charge (%)"),
-        ]
-
-        for col_idx, (col, label) in enumerate(pairs):
-            for row_idx in (0, 1):
-                ax = self.axes[row_idx][col_idx]
-                ax.plot(dfc["Time"], dfc[col], linewidth=0.9, label=f"{col} CSV")
-                ax.set_ylabel(label if col_idx == 0 else "")
-                if row_idx == 1:
-                    ax.set_xlabel("Time")
-                ax.set_title(f"{label} (CSV)")
-                ax.grid(True, linestyle="--", alpha=0.3)
-                ax.legend(loc="best", fontsize=8)
-
-        for col_idx, (col, label) in enumerate(pairs):
-            for row_idx in (2, 3):
-                ax = self.axes[row_idx][col_idx]
-                ax.plot(dfp["Time"], dfp[col], linewidth=0.9, label=f"{col} Parquet")
-                ax.set_ylabel(label if col_idx == 0 else "")
-                if row_idx == 3:
-                    ax.set_xlabel("Time")
-                ax.set_title(f"{label} (Parquet)")
-                ax.grid(True, linestyle="--", alpha=0.3)
-                ax.legend(loc="best", fontsize=8)
-
-        for row in self.axes:
-            for ax in row:
-                ax.tick_params(axis="x", labelrotation=25)
-
-        self.draw()
-
-
-# ---------------------------
-# Utilities
-# ---------------------------
-def parse_time_and_cast_numeric(df: pd.DataFrame, time_unit: str = "s") -> pd.DataFrame:
-    out = df.copy()
-    if "Time" not in out.columns:
-        raise ValueError("Column 'Time' is required.")
-    t = out["Time"]
-    if np.issubdtype(t.dtype, np.number):
-        out["Time"] = pd.to_timedelta(t, unit=time_unit)
-    else:
-        out["Time"] = pd.to_datetime(t, errors="coerce")
-    for c in ["Voltage", "Current", "Temperature", "SOC"]:
-        if c in out.columns:
-            out[c] = pd.to_numeric(out[c], errors="coerce")
-    return out
-
-
-def autosave_figure(fig: Figure, path: Path, log: Callable[[str], None]):
-    try:
-        ensure_parent(path)
-        fig.savefig(path, dpi=150)
-        log(f"Plot saved: {path}")
-    except Exception as e:
-        log(f"Error saving plot '{path}': {e}")
-
-
 # ---------------------------
 # Converter worker
 # ---------------------------
@@ -218,45 +107,13 @@ class ConverterTab(QtWidgets.QWidget):
         self.run_btn = QtWidgets.QPushButton("Convert")
         self.run_btn.clicked.connect(self._run_conversion)
 
-        self.plot4x4_btn = QtWidgets.QPushButton("Plot 4x4 Compare")
-        self.plot4x4_btn.clicked.connect(self._plot_4x4)
-        self.plot4x4_btn.setEnabled(False)
-
-        self.save_plot_btn = QtWidgets.QPushButton("Save Current Plot")
-        self.save_plot_btn.clicked.connect(self._save_plot)
-        self.save_plot_btn.setEnabled(False)
-
         self.progress = QtWidgets.QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
 
         act_lay.addWidget(self.run_btn)
-        act_lay.addWidget(self.plot4x4_btn)
-        act_lay.addWidget(self.save_plot_btn)
         act_lay.addStretch(1)
         act_lay.addWidget(self.progress)
-
-        out_split = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
-
-        plot_tabs = QtWidgets.QTabWidget()
-        self.size_canvas = SizeCanvas(self, width=6, height=4)
-        self.grid_canvas = Grid4x4Canvas(self, width=8, height=7)
-
-        size_tab = QtWidgets.QWidget()
-        size_lay = QtWidgets.QVBoxLayout(size_tab)
-        size_lay.addWidget(self.size_canvas)
-
-        grid_tab = QtWidgets.QWidget()
-        grid_lay = QtWidgets.QVBoxLayout(grid_tab)
-        grid_lay.addWidget(self.grid_canvas)
-
-        plot_tabs.addTab(size_tab, "Size Comparison")
-        plot_tabs.addTab(grid_tab, "4x4 CSV vs Parquet")
-
-        out_split.addWidget(plot_tabs)
-
-        right_container = QtWidgets.QWidget()
-        right_lay = QtWidgets.QVBoxLayout(right_container)
 
         self.log_text = QtWidgets.QPlainTextEdit()
         self.log_text.setReadOnly(True)
@@ -264,13 +121,20 @@ class ConverterTab(QtWidgets.QWidget):
         self.parity_text.setReadOnly(True)
         self.parity_text.setMaximumBlockCount(10000)
 
-        right_lay.addWidget(QtWidgets.QLabel("Logs"))
-        right_lay.addWidget(self.log_text, 1)
-        right_lay.addWidget(QtWidgets.QLabel("Parity"))
-        right_lay.addWidget(self.parity_text, 1)
+        out_split = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical)
+        log_container = QtWidgets.QWidget()
+        log_lay = QtWidgets.QVBoxLayout(log_container)
+        log_lay.addWidget(QtWidgets.QLabel("Logs"))
+        log_lay.addWidget(self.log_text)
 
-        out_split.addWidget(right_container)
-        out_split.setStretchFactor(0, 2)
+        parity_container = QtWidgets.QWidget()
+        parity_lay = QtWidgets.QVBoxLayout(parity_container)
+        parity_lay.addWidget(QtWidgets.QLabel("Parity and summary"))
+        parity_lay.addWidget(self.parity_text)
+
+        out_split.addWidget(log_container)
+        out_split.addWidget(parity_container)
+        out_split.setStretchFactor(0, 1)
         out_split.setStretchFactor(1, 1)
 
         layout.addWidget(path_group)
@@ -316,9 +180,6 @@ class ConverterTab(QtWidgets.QWidget):
         self.progress.setValue(0)
         self.log_text.clear()
         self.parity_text.clear()
-        self.save_plot_btn.setEnabled(False)
-        self.plot4x4_btn.setEnabled(False)
-        self.size_canvas.plot_sizes(float("nan"), float("nan"))
 
         self.worker = ConverterWorker(opts)
         self.worker.log_line.connect(self._append_log)
@@ -337,15 +198,6 @@ class ConverterTab(QtWidgets.QWidget):
         summary = summarize_stats(stats)
         self.parity_text.setPlainText(summary)
 
-        self.size_canvas.plot_sizes(stats.input_mb, stats.output_mb)
-        self.save_plot_btn.setEnabled(True)
-        self.plot4x4_btn.setEnabled(True)
-
-        pq_path = Path(self.parquet_edit.text().strip())
-        base_name = pq_path.stem
-        size_out = PLOTS_DIR / f"{base_name}_size.png"
-        autosave_figure(self.size_canvas.fig, size_out, self._append_log)
-
         self._append_log("Done.")
         self.progress.setValue(100)
 
@@ -353,45 +205,6 @@ class ConverterTab(QtWidgets.QWidget):
         self.run_btn.setEnabled(True)
         self._append_log(f"Error: {msg}")
         QtWidgets.QMessageBox.critical(self, "Conversion failed", msg)
-
-    def _plot_4x4(self):
-        csv_path = self.csv_edit.text().strip()
-        pq_path = self.parquet_edit.text().strip()
-        if not (os.path.exists(csv_path) and os.path.exists(pq_path)):
-            QtWidgets.QMessageBox.warning(self, "Error", "CSV and Parquet files must exist.")
-            return
-
-        df_csv = pd.read_csv(csv_path, sep=self.delim_edit.text() or ",", encoding=self.enc_edit.text() or "utf-8")
-        df_parquet = pd.read_parquet(pq_path)
-
-        self._append_log(f"CSV columns: {df_csv.columns.tolist()}")
-        self._append_log(f"Parquet columns: {df_parquet.columns.tolist()}")
-
-        self.grid_canvas.plot_4x4(df_csv, df_parquet, time_unit="s")
-
-        comp_out = PLOTS_DIR / f"{Path(pq_path).stem}_compare_4x4.png"
-        autosave_figure(self.grid_canvas.fig, comp_out, self._append_log)
-
-    def _save_plot(self):
-        default_path = PLOTS_DIR / "plot.png"
-        ensure_parent(default_path)
-        path, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save Plot", str(default_path), "PNG files (*.png)")
-        if not path:
-            return
-        if not path.lower().endswith(".png"):
-            path += ".png"
-        try:
-            parent = self.grid_canvas.parent()
-            use_grid = False
-            if isinstance(parent, QtWidgets.QWidget):
-                tabw = parent.parent()
-                if isinstance(tabw, QtWidgets.QTabWidget):
-                    use_grid = tabw.currentIndex() == 1
-            fig = self.grid_canvas.fig if use_grid else self.size_canvas.fig
-            fig.savefig(path, dpi=150)
-            self._append_log(f"Plot saved: {path}")
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "Save failed", str(e))
 
 
 # ---------------------------
