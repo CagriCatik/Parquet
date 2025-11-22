@@ -1,4 +1,4 @@
-name: Release ParquetViewer
+name: Build Parquet App executable
 
 on:
   push:
@@ -7,16 +7,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-release:
-    # Use Windows runner to produce a .exe
+  build-windows-exe:
     runs-on: windows-latest
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -27,15 +26,28 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          pyinstaller \
-            --onefile \
-            --windowed \
-            --icon parser.png \
-            parquet_viewer.py
+          pyinstaller ^
+            --noconfirm ^
+            --onefile ^
+            --windowed ^
+            --name ParquetApp ^
+            --paths src ^
+            --icon static\parser.png ^
+            --add-data "static;static" ^
+            --collect-submodules PySide6 ^
+            --collect-submodules pyarrow ^
+            src\parquet_app\app.py
 
-      - name: Publish GitHub Release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ParquetApp-windows
+          path: dist/ParquetApp.exe
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/parquet_viewer.exe
+          files: dist/ParquetApp.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
