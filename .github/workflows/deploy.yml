@@ -29,7 +29,7 @@ jobs:
         run: |
           if (Test-Path ParquetApp.spec) { Remove-Item ParquetApp.spec }
 
-      - name: Build Windows executable
+      - name: Build Windows executable from spec
         run: |
           pyinstaller `
             --noconfirm `
