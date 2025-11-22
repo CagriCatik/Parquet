@@ -26,16 +26,16 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          pyinstaller ^
-            --noconfirm ^
-            --onefile ^
-            --windowed ^
-            --name ParquetApp ^
-            --paths src ^
-            --icon static\parser.png ^
-            --add-data "static;static" ^
-            --collect-submodules PySide6 ^
-            --collect-submodules pyarrow ^
+          pyinstaller `
+            --noconfirm `
+            --onefile `
+            --windowed `
+            --name ParquetApp `
+            --paths src `
+            --icon static\parser.png `
+            --add-data "static;static" `
+            --collect-submodules PySide6 `
+            --collect-submodules pyarrow `
             src\parquet_app\app.py
 
       - name: Upload artifact
@@ -50,4 +50,4 @@ jobs:
         with:
           files: dist/ParquetApp.exe
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
