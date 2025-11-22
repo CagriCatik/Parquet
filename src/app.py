@@ -16,8 +16,9 @@ from .conversion import (
 )
 from .utils import ensure_parent
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-
+ROOT_DIR = Path(__file__).resolve().parent
+STATIC_DIR = ROOT_DIR / "static"
+ICON_PATH = STATIC_DIR / "parser.ico"
 
 # ---------------------------
 # Converter worker
@@ -486,10 +487,9 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("Parquet App")
 
-        icon_path = ROOT_DIR / "static" / "parser.ico"
-        print("Icon path:", icon_path, "exists:", icon_path.exists())
-        if icon_path.exists():
-            self.setWindowIcon(QtGui.QIcon(str(icon_path)))
+        print("Icon path:", ICON_PATH, "exists:", ICON_PATH.exists())
+        if ICON_PATH.exists():
+            self.setWindowIcon(QtGui.QIcon(str(ICON_PATH)))
 
         tabs = QtWidgets.QTabWidget()
         tabs.addTab(ConverterTab(), "Converter")
@@ -503,9 +503,8 @@ class MainWindow(QtWidgets.QMainWindow):
 def run() -> int:
     app = QtWidgets.QApplication(sys.argv)
 
-    icon_path = ROOT_DIR / "static" / "parser.ico"
-    if icon_path.exists():
-        app.setWindowIcon(QtGui.QIcon(str(icon_path)))
+    if ICON_PATH.exists():
+        app.setWindowIcon(QtGui.QIcon(str(ICON_PATH)))
 
     win = MainWindow()
     win.resize(1200, 800)
