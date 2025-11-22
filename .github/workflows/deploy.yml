@@ -34,15 +34,8 @@ jobs:
           pyinstaller `
             --noconfirm `
             --clean `
-            --onefile `
-            --windowed `
-            --name ParquetApp `
-            --paths src `
-            --icon src\static\parser.ico `
-            --add-data "src\static;static" `
-            --collect-submodules PySide6 `
-            --collect-submodules pyarrow `
-            src\parquet_app\app.py
+            ParquetApp.spec
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

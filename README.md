@@ -123,10 +123,3 @@ python -m src.parquet_app.cli gui
 2. Configure delimiter, encoding, chunk size, compression, and nullable integer handling.
 3. Click Convert to start streaming conversion with parity checks and log output.
 4. Switch to the Viewer tab to open any Parquet file, filter or search rows, edit values, delete rows, and export.
-
----
-
-## Documentation
-
-- See [overview](./docs/overview.md) for architecture, data flow diagrams, and supported workflows.
-- See [usage](./docs/usage.md) for end to end CLI and GUI walkthroughs.
