@@ -23,8 +23,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
+          pip install Pillow
+
+      - name: Ensure root static directory exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path static)) {
+            New-Item -ItemType Directory -Path static | Out-Null
+          }
 
       - name: Build Windows executable from spec
+        shell: pwsh
         run: pyinstaller --noconfirm --clean ParquetApp.spec
 
       - name: Upload artifact
