@@ -81,7 +81,7 @@ pip install -r requirements.txt
 ## Project Structure
 
 ```bash
-├── src/parquet_app/
+├── src/
 │   ├── __init__.py
 │   ├── app.py           # Qt desktop UI (converter + viewer tabs)
 │   ├── cli.py           # CLI entrypoint
@@ -101,9 +101,9 @@ pip install -r requirements.txt
 ### CLI
 
 ```bash
-python -m src.parquet_app.cli convert input.csv --compression zstd
-python -m src.parquet_app.cli convert input.parquet --jsonl --output output.jsonl
-python -m src.parquet_app.cli inspect example.parquet --preview --limit 5
+python -m src.cli convert input.csv --compression zstd
+python -m src.cli convert input.parquet --jsonl --output output.jsonl
+python -m src.cli inspect example.parquet --preview --limit 5
 ```
 
 Key options:
@@ -116,7 +116,7 @@ Key options:
 ### Desktop App
 
 ```bash
-python -m src.parquet_app.cli gui
+python -m src.cli gui
 ```
 
 1. Open the Converter tab to select CSV input and Parquet output paths.

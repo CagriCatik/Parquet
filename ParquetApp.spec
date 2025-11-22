@@ -8,7 +8,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('src/static', 'static'),
-    ],
+    ]
     hiddenimports=['PySide6', 'pyarrow'],
     hookspath=[],
     hooksconfig={},
