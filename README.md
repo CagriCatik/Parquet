@@ -25,6 +25,9 @@
   <a href="#">
     <img src="https://img.shields.io/badge/parquet-optimized-2c3e50.svg" />
   </a>
+  <a href="https://deepwiki.com/CagriCatik/Parquet">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" />
+  </a>
 </p>
 
 A unified desktop + CLI toolkit for viewing, converting, and inspecting Parquet data. 
