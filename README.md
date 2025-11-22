@@ -85,7 +85,7 @@ pip install -r requirements.txt
 │   ├── conversion.py    # Conversion and parity logic
 │   ├── inspection.py    # Parquet metadata and preview helpers
 │   └── utils.py         # Shared helpers
-├── static/parser.png    # Application icon
+├── static/parser.ico    # Application icon
 ├── example.parquet      # Sample data for inspection
 ├── requirements.txt
 └── README.md

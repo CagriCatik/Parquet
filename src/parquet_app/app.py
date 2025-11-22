@@ -411,7 +411,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Parquet App")
-        icon_path = ROOT_DIR / "static" / "parser.png"
+        icon_path = ROOT_DIR / "static" / "parser.ico"
         if icon_path.exists():
             self.setWindowIcon(QtGui.QIcon(str(icon_path)))
 
